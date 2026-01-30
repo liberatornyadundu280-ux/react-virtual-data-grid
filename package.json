@@ -1,0 +1,46 @@
+{
+  "name": "data-grid-engine",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "^8.4.7",
+    "@storybook/addon-essentials": "^8.4.7",
+    "@storybook/addon-interactions": "^8.4.7",
+    "@storybook/addon-links": "^8.4.7",
+    "@storybook/blocks": "^8.4.7",
+    "@storybook/react": "^8.4.7",
+    "@storybook/react-vite": "^8.4.7",
+    "@storybook/test": "^8.4.7",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^30.0.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "axe-core": "^4.10.2",
+    "jest-axe": "^10.0.0",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.4.49",
+    "storybook": "^8.4.7",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vitest": "^4.0.18"
+  }
+}

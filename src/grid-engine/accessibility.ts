@@ -25,9 +25,12 @@ import type { CellPosition } from "./types";
  * - The total dimensions (rows × columns)
  * - Whether it's read-only or editable
  *
+ * For infinite columns: Use -1 per W3C recommendation (unknown/unbounded)
+ *
  * @param totalRows - Total number of rows (including header)
- * @param totalColumns - Total number of columns
+ * @param totalColumns - Total number of columns (or -1 for infinite)
  * @param isReadOnly - Whether grid is read-only (default: false)
+ * @param infiniteColumns - Whether columns are unbounded
  * @returns ARIA props for grid container
  */
 export interface GridAriaProps {
@@ -41,11 +44,12 @@ export function getGridAriaProps(
   totalRows: number,
   totalColumns: number,
   isReadOnly: boolean = false,
+  infiniteColumns: boolean = false,
 ): GridAriaProps {
   return {
     role: "grid",
     "aria-rowcount": totalRows + 1, // +1 for header row
-    "aria-colcount": totalColumns,
+    "aria-colcount": infiniteColumns ? -1 : totalColumns, // -1 = unknown/infinite per W3C
     "aria-readonly": isReadOnly || undefined,
   };
 }

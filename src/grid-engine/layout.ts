@@ -27,6 +27,10 @@ export interface Position {
  * - Pinned columns: Fixed x position, ignore scrollLeft
  * - Scrollable columns: x position adjusted by scrollLeft
  *
+ * Supports both schema and infinite column modes:
+ * - Schema mode: Uses pre-computed offsets array
+ * - Infinite mode: Calculates position mathematically
+ *
  * Formula:
  *   x = columnOffset - scrollLeft (for scrollable columns)
  *   x = columnOffset (for pinned columns)
@@ -45,6 +49,8 @@ export interface Position {
  * @param rowHeight - Fixed row height in pixels
  * @param columnMetrics - Pre-computed column metrics
  * @param scrollLeft - Horizontal scroll position
+ * @param infiniteColumns - If true, calculate position mathematically
+ * @param defaultColumnWidth - Width for infinite columns (default: 150)
  * @returns Absolute position in pixels
  */
 export function calculateCellPosition(
@@ -52,6 +58,8 @@ export function calculateCellPosition(
   rowHeight: number,
   columnMetrics: ColumnMetrics,
   scrollLeft: number,
+  infiniteColumns: boolean = false,
+  defaultColumnWidth: number = 150,
 ): Position {
   const { rowIndex, colIndex } = position;
   const { offsets, pinnedCount } = columnMetrics;
@@ -60,7 +68,16 @@ export function calculateCellPosition(
   const y = rowIndex * rowHeight;
 
   // Calculate X position
-  const columnOffset = offsets[colIndex] ?? 0;
+  let columnOffset: number;
+
+  if (infiniteColumns && colIndex >= offsets.length) {
+    // Column beyond schema - calculate mathematically
+    columnOffset = colIndex * defaultColumnWidth;
+  } else {
+    // Column within schema - use pre-computed offset
+    columnOffset = offsets[colIndex] ?? 0;
+  }
+
   const isPinned = colIndex < pinnedCount;
 
   // Pinned columns stay fixed, scrollable columns move with scroll
@@ -125,9 +142,24 @@ export function getCellZIndex(
  * Strategy:
  * - Use position: sticky with top: 0
  * - Let browser handle vertical stickiness
- * - Apply transform for horizontal scroll
+ * - Container wraps header cells
  *
- * @returns CSS properties for sticky header
+ * @returns CSS properties for sticky header container
+ */
+export function getStickyHeaderContainerStyle(): React.CSSProperties {
+  return {
+    position: "sticky",
+    top: 0,
+    zIndex: 30,
+    backgroundColor: "#f9fafb", // Ensure header has background
+  };
+}
+
+/**
+ * Calculate styles for header row (deprecated - use getStickyHeaderContainerStyle).
+ *
+ * @deprecated Use getStickyHeaderContainerStyle instead
+ * @returns CSS properties for header
  */
 export function getHeaderStyle(): React.CSSProperties {
   return {

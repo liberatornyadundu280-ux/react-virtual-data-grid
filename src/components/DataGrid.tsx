@@ -32,12 +32,14 @@ import {
   calculateVisibleColumns,
   calculateColumnMetrics,
   getTotalHeight,
+  generateDefaultColumn,
 } from "../grid-engine/virtualization";
 
 import {
   calculateCellPosition,
   calculateScrollToRow,
   calculateScrollToColumn,
+  getStickyHeaderContainerStyle,
 } from "../grid-engine/layout";
 
 import {
@@ -126,8 +128,17 @@ export const DataGrid: React.FC<DataGridProps> = ({
         width,
         columnMetrics,
         config.overscanColumns,
+        config.infiniteColumns ? "infinite" : "schema",
+        config.defaultColumnWidth,
       ),
-    [scrollLeft, width, columnMetrics, config.overscanColumns],
+    [
+      scrollLeft,
+      width,
+      columnMetrics,
+      config.overscanColumns,
+      config.infiniteColumns,
+      config.defaultColumnWidth,
+    ],
   );
 
   // Total height for virtual scroll container
@@ -210,6 +221,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
             action.direction,
             schema,
             dataState.length,
+            config.infiniteColumns,
           );
           break;
 
@@ -219,6 +231,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
             action.isShift,
             schema,
             dataState.length,
+            config.infiniteColumns,
           );
           break;
 
@@ -229,6 +242,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
             action.isCtrl,
             schema,
             dataState.length,
+            config.infiniteColumns,
           );
           break;
 
@@ -391,6 +405,8 @@ export const DataGrid: React.FC<DataGridProps> = ({
   const gridAriaProps = getGridAriaProps(
     dataState.length,
     schema.columns.length,
+    false,
+    config.infiniteColumns,
   );
   const gridAriaLabel = getGridAriaLabel(
     "Data Grid",
@@ -399,24 +415,44 @@ export const DataGrid: React.FC<DataGridProps> = ({
   );
   const liveRegionProps = getLiveRegionProps();
 
-  // Render visible cells
-  const renderCells = () => {
-    const cells: React.ReactElement[] = [];
+  // Render header row (always visible, sticky)
+  const renderHeader = () => {
+    const headerCells: React.ReactElement[] = [];
 
-    // Render header row
-    for (let colIndex = 0; colIndex < schema.columns.length; colIndex++) {
-      const column = schema.columns[colIndex];
+    // Determine column range to render
+    const startCol = config.infiniteColumns ? visibleColumns.startCol : 0;
+    const endCol = config.infiniteColumns
+      ? visibleColumns.endCol
+      : schema.columns.length - 1;
+
+    for (let colIndex = startCol; colIndex <= endCol; colIndex++) {
+      // Get column from schema or generate default
+      const column =
+        schema.columns[colIndex] ??
+        (config.infiniteColumns
+          ? generateDefaultColumn(colIndex, config.defaultColumnWidth)
+          : null);
+
       if (!column) continue;
+
+      // Skip if column is not visible and not pinned
+      const isPinned = colIndex < columnMetrics.pinnedCount;
+      const isVisible =
+        colIndex >= visibleColumns.startCol &&
+        colIndex <= visibleColumns.endCol;
+      if (!isPinned && !isVisible) continue;
 
       // Calculate position
       const position = calculateCellPosition(
-        { rowIndex: -1, colIndex }, // -1 for header
+        { rowIndex: -1, colIndex }, // -1 indicates header
         config.rowHeight,
         columnMetrics,
         scrollLeft,
+        config.infiniteColumns,
+        config.defaultColumnWidth,
       );
 
-      cells.push(
+      headerCells.push(
         <GridCell
           key={`header-${colIndex}`}
           position={{ rowIndex: -1, colIndex }}
@@ -438,6 +474,13 @@ export const DataGrid: React.FC<DataGridProps> = ({
       );
     }
 
+    return headerCells;
+  };
+
+  // Render visible data rows (virtualized)
+  const renderDataRows = () => {
+    const cells: React.ReactElement[] = [];
+
     // Render visible data rows
     for (
       let rowIndex = visibleRows.startRow;
@@ -447,9 +490,21 @@ export const DataGrid: React.FC<DataGridProps> = ({
       const row = dataState[rowIndex];
       if (!row) continue;
 
-      // Render all columns for this row
-      for (let colIndex = 0; colIndex < schema.columns.length; colIndex++) {
-        const column = schema.columns[colIndex];
+      // Determine column range to render
+      const startCol = config.infiniteColumns ? visibleColumns.startCol : 0;
+      const endCol = config.infiniteColumns
+        ? visibleColumns.endCol
+        : schema.columns.length - 1;
+
+      // Render all visible columns for this row
+      for (let colIndex = startCol; colIndex <= endCol; colIndex++) {
+        // Get column from schema or generate default
+        const column =
+          schema.columns[colIndex] ??
+          (config.infiniteColumns
+            ? generateDefaultColumn(colIndex, config.defaultColumnWidth)
+            : null);
+
         if (!column) continue;
 
         // Skip if column is not visible and not pinned
@@ -465,21 +520,26 @@ export const DataGrid: React.FC<DataGridProps> = ({
           config.rowHeight,
           columnMetrics,
           scrollLeft,
+          config.infiniteColumns,
+          config.defaultColumnWidth,
         );
 
-        // Adjust Y position to account for header
-        const adjustedY = cellPosition.y + config.rowHeight;
+        // Y position starts after header
+        const adjustedY = cellPosition.y;
 
         const isFocused =
           focusedCell.rowIndex === rowIndex &&
           focusedCell.colIndex === colIndex;
+
+        // Get cell value - may be undefined for generated columns
+        const cellValue = row[column.id];
 
         cells.push(
           <GridCell
             key={`${rowIndex}-${colIndex}`}
             position={position}
             column={column}
-            value={row[column.id]}
+            value={cellValue}
             x={cellPosition.x}
             y={adjustedY}
             isFocused={isFocused}
@@ -505,24 +565,37 @@ export const DataGrid: React.FC<DataGridProps> = ({
       ref={containerRef}
       {...gridAriaProps}
       aria-label={gridAriaLabel}
-      className="relative border border-gray-300 bg-gray-100"
+      className="relative border border-gray-300 bg-gray-100 overflow-hidden"
       style={{ width, height }}
     >
-      {/* Scrollable container */}
+      {/* Sticky Header Container */}
+      <div
+        style={{
+          ...getStickyHeaderContainerStyle(),
+          width: columnMetrics.totalWidth,
+          height: config.rowHeight,
+        }}
+        className="relative"
+      >
+        {renderHeader()}
+      </div>
+
+      {/* Scrollable Body Container */}
       <div
         ref={scrollContainerRef}
-        className="w-full h-full overflow-auto"
+        className="w-full overflow-auto"
+        style={{ height: height - config.rowHeight }}
         onScroll={handleScroll}
       >
         {/* Virtual scroll spacer */}
         <div
           className="relative"
           style={{
-            height: totalHeight + config.rowHeight, // +rowHeight for header
+            height: totalHeight,
             width: columnMetrics.totalWidth,
           }}
         >
-          {renderCells()}
+          {renderDataRows()}
         </div>
       </div>
 

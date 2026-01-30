@@ -164,6 +164,12 @@ export interface VirtualizationConfig {
 
   /** Number of extra columns to render left/right of viewport */
   readonly overscanColumns: number;
+
+  /** Enable infinite column mode (Excel-like unbounded columns) */
+  readonly infiniteColumns?: boolean;
+
+  /** Default width for generated columns in infinite mode */
+  readonly defaultColumnWidth?: number;
 }
 
 /**

@@ -204,6 +204,10 @@ function findLastVisibleColumn(
 /**
  * Calculate which columns are visible in the current viewport.
  *
+ * Supports two modes:
+ * 1. Schema mode (default): Searches within defined schema columns
+ * 2. Infinite mode: Calculates columns mathematically (Excel-like)
+ *
  * Handles both pinned and scrollable columns:
  * - Pinned columns are ALWAYS visible (indices 0 to pinnedCount - 1)
  * - Scrollable columns are calculated based on scroll position
@@ -215,6 +219,8 @@ function findLastVisibleColumn(
  * @param viewportWidth - Width of visible area
  * @param columnMetrics - Pre-computed column metrics
  * @param overscan - Extra columns to render (default: 2)
+ * @param mode - 'schema' for bounded columns, 'infinite' for unbounded
+ * @param defaultColumnWidth - Width for infinite columns (default: 150)
  * @returns Range of scrollable columns to render
  */
 export function calculateVisibleColumns(
@@ -222,6 +228,8 @@ export function calculateVisibleColumns(
   viewportWidth: number,
   columnMetrics: ColumnMetrics,
   overscan: number = 2,
+  mode: "schema" | "infinite" = "schema",
+  defaultColumnWidth: number = 150,
 ): ColumnRange {
   const { offsets, pinnedCount, pinnedWidth } = columnMetrics;
 
@@ -229,7 +237,24 @@ export function calculateVisibleColumns(
   const scrollableScrollLeft = scrollLeft;
   const scrollableViewportWidth = viewportWidth - pinnedWidth;
 
-  // Find visible range in scrollable area
+  if (mode === "infinite") {
+    // Infinite mode: Calculate columns mathematically (like rows)
+    // This allows unbounded horizontal scrolling
+    const firstVisibleCol = Math.floor(
+      scrollableScrollLeft / defaultColumnWidth,
+    );
+    const lastVisibleCol = Math.ceil(
+      (scrollableScrollLeft + scrollableViewportWidth) / defaultColumnWidth,
+    );
+
+    // Add overscan buffer
+    let startCol = Math.max(pinnedCount, firstVisibleCol - overscan);
+    let endCol = lastVisibleCol + overscan;
+
+    return { startCol, endCol };
+  }
+
+  // Schema mode: Search within defined columns (existing behavior)
   const scrollRight = scrollableScrollLeft + scrollableViewportWidth;
 
   let startCol = findFirstVisibleColumn(scrollableScrollLeft, offsets);
@@ -280,6 +305,22 @@ export function getColumnOffset(
 }
 
 /**
+ * Calculate column offset for infinite column mode.
+ *
+ * When columns extend beyond schema, calculate position mathematically.
+ *
+ * @param colIndex - Zero-based column index
+ * @param defaultColumnWidth - Width for undefined columns
+ * @returns X-coordinate in pixels
+ */
+export function getColumnOffsetInfinite(
+  colIndex: number,
+  defaultColumnWidth: number = 150,
+): number {
+  return colIndex * defaultColumnWidth;
+}
+
+/**
  * Calculate total height of virtual scroll container.
  *
  * This creates the scrollable area. Browser's scrollbar appears based on this.
@@ -292,4 +333,58 @@ export function getColumnOffset(
  */
 export function getTotalHeight(totalRows: number, rowHeight: number): number {
   return totalRows * rowHeight;
+}
+
+/**
+ * Generate a default column definition for columns beyond schema.
+ *
+ * Used in infinite column mode when column index exceeds schema.columns.length.
+ * Creates Excel-like column labels: A, B, C, ... Z, AA, AB, ...
+ *
+ * @param colIndex - Zero-based column index
+ * @param defaultWidth - Width for generated column (default: 150)
+ * @returns Column definition
+ */
+export function generateDefaultColumn(
+  colIndex: number,
+  defaultWidth: number = 150,
+): GridColumn {
+  // Convert column index to Excel-style label (A, B, C, ... Z, AA, AB, ...)
+  let label = "";
+  let num = colIndex;
+
+  while (num >= 0) {
+    label = String.fromCharCode(65 + (num % 26)) + label;
+    num = Math.floor(num / 26) - 1;
+  }
+
+  return {
+    id: `col_${colIndex}`,
+    label: label,
+    width: defaultWidth,
+    pinned: false,
+    editable: false,
+    type: "text",
+  };
+}
+
+/**
+ * Calculate total width for infinite column mode.
+ *
+ * For infinite columns, we need a very large (but not infinite) scroll width.
+ * Use a practical limit that simulates infinity.
+ *
+ * @param visibleColumns - Maximum visible column index
+ * @param defaultColumnWidth - Width per column
+ * @param bufferMultiplier - How many viewports ahead to allocate (default: 10)
+ * @returns Total container width in pixels
+ */
+export function getTotalWidthInfinite(
+  visibleColumns: number,
+  defaultColumnWidth: number = 150,
+  bufferMultiplier: number = 10,
+): number {
+  // Allocate width for visible columns + buffer
+  // This creates scroll space ahead of current position
+  return (visibleColumns + bufferMultiplier) * defaultColumnWidth;
 }

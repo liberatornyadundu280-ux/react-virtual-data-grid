@@ -46,7 +46,7 @@ export interface NavigationResult {
  * - At top edge, ArrowUp does nothing
  * - At bottom edge, ArrowDown does nothing
  * - At left edge, ArrowLeft does nothing
- * - At right edge, ArrowRight does nothing
+ * - At right edge, ArrowRight does nothing (unless infinite columns enabled)
  *
  * Example:
  *   Current: (5, 3)
@@ -57,6 +57,7 @@ export interface NavigationResult {
  * @param direction - Arrow key direction
  * @param schema - Grid schema (for bounds checking)
  * @param totalRows - Total number of rows
+ * @param infiniteColumns - If true, no right boundary for columns
  * @returns New focus position after navigation
  */
 export function handleArrowKey(
@@ -64,9 +65,10 @@ export function handleArrowKey(
   direction: ArrowDirection,
   schema: GridSchema,
   totalRows: number,
+  infiniteColumns: boolean = false,
 ): CellPosition {
   const { rowIndex, colIndex } = currentPosition;
-  const totalCols = schema.columns.length;
+  const schemaColumnCount = schema.columns.length;
 
   let newRowIndex = rowIndex;
   let newColIndex = colIndex;
@@ -85,7 +87,13 @@ export function handleArrowKey(
       break;
 
     case "ArrowRight":
-      newColIndex = Math.min(totalCols - 1, colIndex + 1);
+      // For infinite columns: no upper bound
+      // For schema mode: limit to schema column count
+      if (infiniteColumns) {
+        newColIndex = colIndex + 1;
+      } else {
+        newColIndex = Math.min(schemaColumnCount - 1, colIndex + 1);
+      }
       break;
   }
 
@@ -99,14 +107,18 @@ export function handleArrowKey(
  * - Tab: Move right, wrap to next row at end
  * - Shift+Tab: Move left, wrap to previous row at start
  *
+ * For infinite columns, Tab continues indefinitely to the right.
+ *
  * Example:
- *   Current: (5, 9) - last column
- *   Tab: (6, 0) - first column of next row
+ *   Current: (5, 9) - last schema column
+ *   Tab (infinite): (5, 10) - continues beyond schema
+ *   Tab (schema): (6, 0) - wraps to next row
  *
  * @param currentPosition - Current focused cell
  * @param isShift - Whether Shift key is held
  * @param schema - Grid schema
  * @param totalRows - Total number of rows
+ * @param infiniteColumns - If true, Tab continues indefinitely
  * @returns New focus position after tab
  */
 export function handleTabKey(
@@ -114,28 +126,37 @@ export function handleTabKey(
   isShift: boolean,
   schema: GridSchema,
   totalRows: number,
+  infiniteColumns: boolean = false,
 ): CellPosition {
   const { rowIndex, colIndex } = currentPosition;
-  const totalCols = schema.columns.length;
+  const schemaColumnCount = schema.columns.length;
 
   if (isShift) {
     // Shift+Tab: Move left, wrap to previous row
     if (colIndex > 0) {
       return { rowIndex, colIndex: colIndex - 1 };
     } else if (rowIndex > 0) {
-      return { rowIndex: rowIndex - 1, colIndex: totalCols - 1 };
+      // Wrap to last column of previous row
+      const lastCol = infiniteColumns ? colIndex : schemaColumnCount - 1;
+      return { rowIndex: rowIndex - 1, colIndex: lastCol };
     }
     // At first cell, stay there
     return currentPosition;
   } else {
     // Tab: Move right, wrap to next row
-    if (colIndex < totalCols - 1) {
+    const isLastColumn = infiniteColumns
+      ? false
+      : colIndex >= schemaColumnCount - 1;
+
+    if (!isLastColumn) {
       return { rowIndex, colIndex: colIndex + 1 };
     } else if (rowIndex < totalRows - 1) {
       return { rowIndex: rowIndex + 1, colIndex: 0 };
     }
-    // At last cell, stay there
-    return currentPosition;
+    // At last cell, stay there (or continue right if infinite)
+    return infiniteColumns
+      ? { rowIndex, colIndex: colIndex + 1 }
+      : currentPosition;
   }
 }
 
@@ -144,15 +165,16 @@ export function handleTabKey(
  *
  * Behavior:
  * - Home: Jump to first column of current row
- * - End: Jump to last column of current row
+ * - End: Jump to last column of current row (or current + offset if infinite)
  * - Ctrl+Home: Jump to first cell (0, 0)
- * - Ctrl+End: Jump to last cell
+ * - Ctrl+End: Jump to last cell (or far right if infinite)
  *
  * @param currentPosition - Current focused cell
  * @param key - 'Home' or 'End'
  * @param isCtrl - Whether Ctrl/Cmd key is held
  * @param schema - Grid schema
  * @param totalRows - Total number of rows
+ * @param infiniteColumns - If true, End jumps to visible right edge
  * @returns New focus position
  */
 export function handleHomeEndKey(
@@ -161,9 +183,10 @@ export function handleHomeEndKey(
   isCtrl: boolean,
   schema: GridSchema,
   totalRows: number,
+  infiniteColumns: boolean = false,
 ): CellPosition {
-  const { rowIndex } = currentPosition;
-  const totalCols = schema.columns.length;
+  const { rowIndex, colIndex } = currentPosition;
+  const schemaColumnCount = schema.columns.length;
 
   if (key === "Home") {
     if (isCtrl) {
@@ -177,10 +200,12 @@ export function handleHomeEndKey(
     // End key
     if (isCtrl) {
       // Ctrl+End: Last cell
-      return { rowIndex: totalRows - 1, colIndex: totalCols - 1 };
+      const lastCol = infiniteColumns ? colIndex + 10 : schemaColumnCount - 1; // Jump 10 columns right if infinite
+      return { rowIndex: totalRows - 1, colIndex: lastCol };
     } else {
       // End: Last column of current row
-      return { rowIndex, colIndex: totalCols - 1 };
+      const lastCol = infiniteColumns ? colIndex + 10 : schemaColumnCount - 1;
+      return { rowIndex, colIndex: lastCol };
     }
   }
 }
