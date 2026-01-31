@@ -27,10 +27,10 @@ type Story = StoryObj<typeof DataGrid>;
 
 // Helper: Generate sample data
 function generateData(rowCount: number): GridData {
-  const data: GridData = [];
+  const temp: GridRow[] = [];
 
   for (let i = 0; i < rowCount; i++) {
-    data.push({
+    temp.push({
       id: i + 1,
       name: `Person ${i + 1}`,
       email: `person${i + 1}@example.com`,
@@ -46,7 +46,7 @@ function generateData(rowCount: number): GridData {
       status: i % 3 === 0 ? "Active" : "Inactive",
     });
   }
-
+  const data: GridData = temp;
   return data;
 }
 

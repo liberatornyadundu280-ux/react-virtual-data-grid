@@ -24,26 +24,24 @@ export interface Position {
  * Calculate the absolute position of a cell in pixels.
  *
  * This function handles both pinned and scrollable columns:
- * - Pinned columns: Fixed x position, ignore scrollLeft
+ * - Pinned columns: Fixed x position, compensate for scroll if in scrolling container
  * - Scrollable columns: x position adjusted by scrollLeft
+ *
+ * Headers vs Body cells have different scroll behavior:
+ * - Headers: In non-scrolling container, use normal formula
+ * - Body: In scrolling container, pinned cells need scroll compensation
  *
  * Supports both schema and infinite column modes:
  * - Schema mode: Uses pre-computed offsets array
  * - Infinite mode: Calculates position mathematically
  *
  * Formula:
- *   x = columnOffset - scrollLeft (for scrollable columns)
- *   x = columnOffset (for pinned columns)
- *   y = rowIndex * rowHeight
- *
- * Example:
- *   Row 10, Column 3 (scrollable), rowHeight 40px
- *   Column offset = 450px, scrollLeft = 200px
- *
- *   x = 450 - 200 = 250px
- *   y = 10 * 40 = 400px
- *
- *   Result: Cell positioned at (250, 400)
+ *   For headers:
+ *     Pinned: x = columnOffset (fixed)
+ *     Scrollable: x = columnOffset - scrollLeft (moves)
+ *   For body cells:
+ *     Pinned: x = columnOffset + scrollLeft (compensate for container scroll)
+ *     Scrollable: x = columnOffset - scrollLeft (normal)
  *
  * @param position - Cell coordinates (rowIndex, colIndex)
  * @param rowHeight - Fixed row height in pixels
@@ -51,6 +49,7 @@ export interface Position {
  * @param scrollLeft - Horizontal scroll position
  * @param infiniteColumns - If true, calculate position mathematically
  * @param defaultColumnWidth - Width for infinite columns (default: 150)
+ * @param isHeader - If true, this is a header cell (different scroll behavior)
  * @returns Absolute position in pixels
  */
 export function calculateCellPosition(
@@ -60,6 +59,7 @@ export function calculateCellPosition(
   scrollLeft: number,
   infiniteColumns: boolean = false,
   defaultColumnWidth: number = 150,
+  isHeader: boolean = false,
 ): Position {
   const { rowIndex, colIndex } = position;
   const { offsets, pinnedCount } = columnMetrics;
@@ -80,8 +80,17 @@ export function calculateCellPosition(
 
   const isPinned = colIndex < pinnedCount;
 
-  // Pinned columns stay fixed, scrollable columns move with scroll
-  const x = isPinned ? columnOffset : columnOffset - scrollLeft;
+  // Different formulas for headers vs body cells
+  let x: number;
+  if (isHeader) {
+    // Headers are in non-scrolling container
+    // Pinned: stay fixed, Scrollable: move with scrollLeft
+    x = isPinned ? columnOffset : columnOffset - scrollLeft;
+  } else {
+    // Body cells are in scrolling container
+    // Pinned: compensate for container scroll, Scrollable: move normally
+    x = isPinned ? columnOffset + scrollLeft : columnOffset - scrollLeft;
+  }
 
   return { x, y };
 }
@@ -314,7 +323,7 @@ export function calculateScrollToColumn(
 
   const colLeft = offsets[colIndex] ?? 0;
   const colRight = offsets[colIndex + 1] ?? colLeft;
-  const _colWidth = colRight - colLeft;
+  const colWidth = colRight - colLeft;
 
   const scrollableViewportWidth = viewportWidth - pinnedWidth;
   const viewportLeft = currentScrollLeft;

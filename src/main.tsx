@@ -35,12 +35,12 @@ const demoSchema: GridSchema = {
     { id: "id", label: "ID", width: 80, pinned: true },
     { id: "name", label: "Name", width: 200, pinned: true, editable: true },
     { id: "email", label: "Email", width: 250, editable: true },
-    { id: "age", label: "Age", width: 80 },
-    { id: "department", label: "Department", width: 150 },
-    { id: "salary", label: "Salary", width: 120 },
-    { id: "city", label: "City", width: 150 },
-    { id: "country", label: "Country", width: 120 },
-    { id: "status", label: "Status", width: 100 },
+    { id: "age", label: "Age", width: 80, editable: true },
+    { id: "department", label: "Department", width: 150, editable: true },
+    { id: "salary", label: "Salary", width: 120, editable: true },
+    { id: "city", label: "City", width: 150, editable: true },
+    { id: "country", label: "Country", width: 120, editable: true },
+    { id: "status", label: "Status", width: 100, editable: true },
   ],
 };
 

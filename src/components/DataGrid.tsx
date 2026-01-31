@@ -315,7 +315,11 @@ export const DataGrid: React.FC<DataGridProps> = ({
     if (!editState) return;
 
     const { position } = editState;
-    const column = schema.columns[position.colIndex];
+    const column =
+      schema.columns[position.colIndex] ??
+      (config.infiniteColumns
+        ? generateDefaultColumn(position.colIndex, config.defaultColumnWidth)
+        : null);
     if (!column) return;
 
     // Process the edit with validation
@@ -342,6 +346,9 @@ export const DataGrid: React.FC<DataGridProps> = ({
         ),
       );
 
+      // Exit edit mode immediately
+      setEditState(null);
+
       // Call user callback
       if (onCellEdit) {
         await onCellEdit(
@@ -352,11 +359,10 @@ export const DataGrid: React.FC<DataGridProps> = ({
         );
       }
 
-      // Exit edit mode after success
+      // Restore focus to cell after state update
       setTimeout(() => {
-        setEditState(null);
         focusCell(position, containerRef.current);
-      }, 500);
+      }, 0);
     } else if (result.state.status === "error") {
       // Show error
       setEditState(result.state);
@@ -370,7 +376,14 @@ export const DataGrid: React.FC<DataGridProps> = ({
         focusCell(position, containerRef.current);
       }, 2000);
     }
-  }, [editState, schema, dataState, onCellEdit]);
+  }, [
+    editState,
+    schema,
+    dataState,
+    onCellEdit,
+    config.infiniteColumns,
+    config.defaultColumnWidth,
+  ]);
 
   // Handle edit cancel
   const handleEditCancel = useCallback(() => {
@@ -378,7 +391,11 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
     const value = cancelEdit(editState);
     const position = editState.position;
-    const column = schema.columns[position.colIndex];
+    const column =
+      schema.columns[position.colIndex] ??
+      (config.infiniteColumns
+        ? generateDefaultColumn(position.colIndex, config.defaultColumnWidth)
+        : null);
 
     if (column) {
       // Restore original value
@@ -399,7 +416,13 @@ export const DataGrid: React.FC<DataGridProps> = ({
     setTimeout(() => {
       focusCell(position, containerRef.current);
     }, 0);
-  }, [editState, schema, dataState]);
+  }, [
+    editState,
+    schema,
+    dataState,
+    config.infiniteColumns,
+    config.defaultColumnWidth,
+  ]);
 
   // Get ARIA props
   const gridAriaProps = getGridAriaProps(
@@ -459,6 +482,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
       if (!column) continue;
 
       // Calculate position
+      // Headers use isHeader flag for correct scroll behavior
       const position = calculateCellPosition(
         { rowIndex: -1, colIndex }, // -1 indicates header
         config.rowHeight,
@@ -466,6 +490,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
         scrollLeft,
         config.infiniteColumns,
         config.defaultColumnWidth,
+        true, // isHeader=true for different scroll logic
       );
 
       headerCells.push(
@@ -553,6 +578,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
           scrollLeft,
           config.infiniteColumns,
           config.defaultColumnWidth,
+          false, // isHeader=false for body cells
         );
 
         // Y position starts after header

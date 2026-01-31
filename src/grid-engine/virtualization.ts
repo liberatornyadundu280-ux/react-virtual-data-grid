@@ -363,7 +363,7 @@ export function generateDefaultColumn(
     label: label,
     width: defaultWidth,
     pinned: false,
-    editable: false,
+    editable: true, // Make infinite columns editable
     type: "text",
   };
 }
