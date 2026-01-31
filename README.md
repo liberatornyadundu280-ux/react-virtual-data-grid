@@ -413,6 +413,22 @@ Example:
  */
 ```
 
+# 🛠️ Known Limitations & Technical
+
+DebtWhile the core architecture is robust, the following areas identified during final testing represent known technical debt:
+
+1. Focus Restoration LifecycleIssue:
+
+- Unit tests for focus restoration after editing currently fail in virtualized environments.Root Cause: When dataState updates after a commit, the DOM re-renders. The imperative setTimeout focus restoration can trigger before the recycled node is fully mounted.Resolution: Future iterations will implement a declarative useEffect synchronization to map the logical focusedCell state to the DOM post-render.
+
+2. Validation Visibility & ClippingIssue:
+
+- Error tooltips were initially clipped by overflow-hidden containers.Fix Applied: Implemented conditional overflow-visible and elevated z-index during active edit states.Debt: For nested scroll containers, a React Portal implementation would be a more resilient architectural choice for tooltips.
+
+3. Sorting Thread BlockingIssue:
+
+- Sorting 50,000 rows is an $O(n \log n)$ operation.Status: Currently memoized to prevent re-sorting on scroll.Optimization: Offloading this to a Web Worker would ensure the main thread remains idle during sort changes for even better responsiveness.
+
 ## 🚦 Getting Started
 
 ### Installation
