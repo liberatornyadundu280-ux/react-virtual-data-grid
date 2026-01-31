@@ -217,3 +217,16 @@ export interface DataGridProps {
   /** Width of the grid container */
   readonly width: number;
 }
+// grid-engine/types.ts
+export type SortDirection = "asc" | "desc" | null;
+
+export interface SortDescriptor {
+  readonly columnId: string;
+  readonly direction: SortDirection;
+}
+
+// Update GridState to track the sort stack
+export interface GridState {
+  // ... existing state
+  readonly sortStack: readonly SortDescriptor[];
+}

@@ -103,8 +103,13 @@ export const GridCell: React.FC<GridCellProps> = ({
     ? getCellAriaLabel(column.label, position.rowIndex, totalRows)
     : undefined;
 
-  // Calculate z-index
-  const zIndex = getCellZIndex(position.colIndex, pinnedCount, isHeader);
+  /**
+   * FIX: Elevation during editing
+   * We increase the z-index when editing so the error message (positioned at -bottom-8)
+   * appears ABOVE the rows below it.
+   */
+  const baseZIndex = getCellZIndex(position.colIndex, pinnedCount, isHeader);
+  const zIndex = isEditing ? baseZIndex + 100 : baseZIndex;
 
   // Get edit status class
   const editStatusClass =
@@ -164,7 +169,8 @@ export const GridCell: React.FC<GridCellProps> = ({
         ${isFocused && !isEditing ? "ring-2 ring-blue-500 ring-inset" : ""}
         ${editStatusClass}
         px-3 py-2
-        overflow-hidden
+        /* FIX: Remove overflow-hidden during editing so the error tooltip is visible */
+        ${isEditing ? "overflow-visible" : "overflow-hidden"}
         cursor-pointer
         hover:bg-gray-50
         transition-colors
@@ -196,7 +202,10 @@ export const GridCell: React.FC<GridCellProps> = ({
 
       {/* Show error message */}
       {isEditing && editState?.error && (
-        <div className="absolute left-0 right-0 -bottom-8 px-2 py-1 bg-red-100 border border-red-300 rounded text-xs text-red-800 z-50">
+        <div
+          role="alert"
+          className="absolute left-0 right-0 -bottom-8 px-2 py-1 bg-red-100 border border-red-300 rounded text-xs text-red-800 z-50 shadow-md"
+        >
           {editState.error}
         </div>
       )}
