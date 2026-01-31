@@ -70,6 +70,13 @@ function App() {
             <li className="flex items-start">
               <span className="text-green-500 mr-2">✓</span>
               <span>
+                <strong>Infinite columns</strong> - Scroll right indefinitely
+                (A, B... Z, AA...)
+              </span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-green-500 mr-2">✓</span>
+              <span>
                 <strong>Virtualization</strong> - Only visible cells rendered
               </span>
             </li>
@@ -77,6 +84,12 @@ function App() {
               <span className="text-green-500 mr-2">✓</span>
               <span>
                 <strong>Pinned columns</strong> - ID and Name stay fixed
+              </span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-green-500 mr-2">✓</span>
+              <span>
+                <strong>Sticky headers</strong> - Headers stay at top
               </span>
             </li>
             <li className="flex items-start">
@@ -94,19 +107,7 @@ function App() {
             <li className="flex items-start">
               <span className="text-green-500 mr-2">✓</span>
               <span>
-                <strong>Validation</strong> - Async with rollback
-              </span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-green-500 mr-2">✓</span>
-              <span>
                 <strong>Accessibility</strong> - Full ARIA support
-              </span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-green-500 mr-2">✓</span>
-              <span>
-                <strong>Zero dependencies</strong> - Hand-written engines
               </span>
             </li>
           </ul>
@@ -116,6 +117,10 @@ function App() {
             <ul className="text-sm text-blue-800 space-y-1">
               <li>
                 • Scroll rapidly up/down to test virtualization performance
+              </li>
+              <li>
+                • Scroll right to reveal infinite columns (J, K, L... Z, AA,
+                AB...)
               </li>
               <li>• Click a Name or Email cell and press Enter to edit</li>
               <li>
@@ -132,11 +137,11 @@ function App() {
           <div className="p-4 bg-gray-50 border-b">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">
-                Grid: 50,000 Rows × 9 Columns
+                Grid: 50,000 Rows × Infinite Columns
               </h2>
               <div className="text-sm text-gray-600">
                 <span className="font-mono bg-gray-200 px-2 py-1 rounded">
-                  ~30 rows rendered at any time
+                  ~30 rows × ~10 columns rendered at any time
                 </span>
               </div>
             </div>
@@ -150,6 +155,8 @@ function App() {
                 rowHeight: 40,
                 overscanRows: 5,
                 overscanColumns: 2,
+                infiniteColumns: true, // Enable infinite columns
+                defaultColumnWidth: 150, // Default width for generated columns
               }}
               height={600}
               width={1400}

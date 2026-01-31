@@ -157,7 +157,7 @@ element?.focus();
 
 **Screen Reader Announcements**:
 
-- "Data Grid, 50,000 rows, 9 columns"
+- "Data Grid, 50,000 rows, infinity columns"
 - "Name, Row 5 of 50,000"
 - "Cell updated: Name changed from Alice to Alicia"
 

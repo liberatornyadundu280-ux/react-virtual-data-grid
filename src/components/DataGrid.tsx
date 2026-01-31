@@ -419,13 +419,36 @@ export const DataGrid: React.FC<DataGridProps> = ({
   const renderHeader = () => {
     const headerCells: React.ReactElement[] = [];
 
-    // Determine column range to render
-    const startCol = config.infiniteColumns ? visibleColumns.startCol : 0;
-    const endCol = config.infiniteColumns
-      ? visibleColumns.endCol
-      : schema.columns.length - 1;
+    // In infinite mode: render pinned columns + visible scrollable columns
+    // In schema mode: render all schema columns (will be filtered by visibility)
+    const columnsToRender: number[] = [];
 
-    for (let colIndex = startCol; colIndex <= endCol; colIndex++) {
+    if (config.infiniteColumns) {
+      // Add pinned columns (always visible)
+      for (let i = 0; i < columnMetrics.pinnedCount; i++) {
+        columnsToRender.push(i);
+      }
+      // Add visible scrollable columns
+      for (
+        let i = Math.max(columnMetrics.pinnedCount, visibleColumns.startCol);
+        i <= visibleColumns.endCol;
+        i++
+      ) {
+        columnsToRender.push(i);
+      }
+    } else {
+      // Schema mode: render based on schema and visibility
+      for (let i = 0; i < schema.columns.length; i++) {
+        const isPinned = i < columnMetrics.pinnedCount;
+        const isVisible =
+          i >= visibleColumns.startCol && i <= visibleColumns.endCol;
+        if (isPinned || isVisible) {
+          columnsToRender.push(i);
+        }
+      }
+    }
+
+    for (const colIndex of columnsToRender) {
       // Get column from schema or generate default
       const column =
         schema.columns[colIndex] ??
@@ -434,13 +457,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
           : null);
 
       if (!column) continue;
-
-      // Skip if column is not visible and not pinned
-      const isPinned = colIndex < columnMetrics.pinnedCount;
-      const isVisible =
-        colIndex >= visibleColumns.startCol &&
-        colIndex <= visibleColumns.endCol;
-      if (!isPinned && !isVisible) continue;
 
       // Calculate position
       const position = calculateCellPosition(
@@ -490,14 +506,36 @@ export const DataGrid: React.FC<DataGridProps> = ({
       const row = dataState[rowIndex];
       if (!row) continue;
 
-      // Determine column range to render
-      const startCol = config.infiniteColumns ? visibleColumns.startCol : 0;
-      const endCol = config.infiniteColumns
-        ? visibleColumns.endCol
-        : schema.columns.length - 1;
+      // Determine which columns to render
+      const columnsToRender: number[] = [];
 
-      // Render all visible columns for this row
-      for (let colIndex = startCol; colIndex <= endCol; colIndex++) {
+      if (config.infiniteColumns) {
+        // Add pinned columns (always visible)
+        for (let i = 0; i < columnMetrics.pinnedCount; i++) {
+          columnsToRender.push(i);
+        }
+        // Add visible scrollable columns
+        for (
+          let i = Math.max(columnMetrics.pinnedCount, visibleColumns.startCol);
+          i <= visibleColumns.endCol;
+          i++
+        ) {
+          columnsToRender.push(i);
+        }
+      } else {
+        // Schema mode: render based on schema and visibility
+        for (let i = 0; i < schema.columns.length; i++) {
+          const isPinned = i < columnMetrics.pinnedCount;
+          const isVisible =
+            i >= visibleColumns.startCol && i <= visibleColumns.endCol;
+          if (isPinned || isVisible) {
+            columnsToRender.push(i);
+          }
+        }
+      }
+
+      // Render each column for this row
+      for (const colIndex of columnsToRender) {
         // Get column from schema or generate default
         const column =
           schema.columns[colIndex] ??
@@ -506,13 +544,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
             : null);
 
         if (!column) continue;
-
-        // Skip if column is not visible and not pinned
-        const isPinned = colIndex < columnMetrics.pinnedCount;
-        const isVisible =
-          colIndex >= visibleColumns.startCol &&
-          colIndex <= visibleColumns.endCol;
-        if (!isPinned && !isVisible) continue;
 
         const position = { rowIndex, colIndex };
         const cellPosition = calculateCellPosition(
@@ -560,6 +591,26 @@ export const DataGrid: React.FC<DataGridProps> = ({
     return cells;
   };
 
+  // Calculate scroll container width based on mode
+  const getScrollContainerWidth = () => {
+    if (config.infiniteColumns) {
+      // Infinite mode: Create illusion of infinite scroll space
+      // Width = current rightmost visible column + buffer ahead
+      const defaultWidth = config.defaultColumnWidth ?? 150;
+      const rightmostColumn = visibleColumns.endCol;
+      const viewportsAhead = 20; // Scroll space buffer (adjustable)
+      const viewportColumns = Math.ceil(width / defaultWidth);
+
+      // Calculate total width: reached columns + buffer
+      return (
+        (rightmostColumn + viewportsAhead * viewportColumns) * defaultWidth
+      );
+    }
+
+    // Schema mode: Use pre-computed total width from schema
+    return columnMetrics.totalWidth;
+  };
+
   return (
     <div
       ref={containerRef}
@@ -572,7 +623,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
       <div
         style={{
           ...getStickyHeaderContainerStyle(),
-          width: columnMetrics.totalWidth,
+          width: getScrollContainerWidth(),
           height: config.rowHeight,
         }}
         className="relative"
@@ -592,7 +643,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
           className="relative"
           style={{
             height: totalHeight,
-            width: columnMetrics.totalWidth,
+            width: getScrollContainerWidth(),
           }}
         >
           {renderDataRows()}
