@@ -155,6 +155,17 @@ export const GridCell: React.FC<GridCellProps> = ({
   // Format value for display
   const displayValue =
     value === null || value === undefined ? "" : String(value);
+  // Inside GridCell.tsx
+
+  // 1. Determine status colors directly (Avoids CSS purging)
+  let statusClasses = "";
+  if (isEditing && editState) {
+    if (editState.status === "error")
+      statusClasses = "bg-red-50 ring-2 ring-red-500 ring-inset";
+    else if (editState.status === "success")
+      statusClasses = "bg-green-50 ring-2 ring-green-500 ring-inset";
+    else if (editState.status === "pending") statusClasses = "bg-yellow-50";
+  }
 
   return (
     <div
@@ -164,18 +175,27 @@ export const GridCell: React.FC<GridCellProps> = ({
       data-col-index={position.colIndex}
       style={cellStyles}
       className={`
-    border-b border-r border-gray-200
-    ${isHeader ? "bg-gray-50 font-semibold" : ""} 
-    /* FIX: Only apply bg-white if NOT editing and NOT a header */
-    ${!isHeader && !isEditing ? "bg-white" : ""} 
-    ${isFocused && !isEditing ? "ring-2 ring-blue-500 ring-inset" : ""}
-    ${editStatusClass} /* This contains bg-red-50 or bg-green-50 */
-    px-3 py-2
-    ${isEditing ? "overflow-visible" : "overflow-hidden"}
-    cursor-pointer
-    hover:bg-gray-50
-    transition-colors
-  `}
+      border-b border-r border-gray-200
+      px-3 py-2
+      cursor-pointer
+      transition-colors
+      relative
+      
+      /* Header vs Data row base colors */
+      ${isHeader ? "bg-gray-50 font-semibold" : ""}
+      
+      /* ONLY apply white if NOT editing and NOT a header */
+      ${!isHeader && !isEditing ? "bg-white" : ""}
+      
+      /* Navigation focus */
+      ${isFocused && !isEditing ? "ring-2 ring-blue-500 ring-inset" : ""}
+      
+      /* Apply the status colors we calculated above */
+      ${statusClasses}
+      
+      /* Tooltip visibility */
+      ${isEditing ? "overflow-visible" : "overflow-hidden"}
+    `}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >

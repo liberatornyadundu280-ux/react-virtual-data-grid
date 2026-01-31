@@ -307,11 +307,10 @@ export function cancelEdit(state: EditState): unknown {
 export function getEditStatusClass(status: EditStatus): string {
   switch (status) {
     case "error":
-      return "bg-red-50 ring-2 ring-red-500 ring-inset"; // Must include bg-red-50
+      // We use !important (via Tailwind's '!' prefix) or ensure bg-white is gone
+      return "bg-red-50 ring-2 ring-red-600 ring-inset";
     case "success":
-      return "bg-green-50 ring-2 ring-green-500 ring-inset";
-    case "pending":
-      return "bg-yellow-50";
+      return "bg-green-50 ring-2 ring-green-600 ring-inset";
     default:
       return "";
   }
