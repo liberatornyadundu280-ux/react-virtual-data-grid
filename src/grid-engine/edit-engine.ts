@@ -303,16 +303,15 @@ export function cancelEdit(state: EditState): unknown {
  * @param status - Current edit status
  * @returns CSS class name
  */
+// grid-engine/edit-engine.ts
 export function getEditStatusClass(status: EditStatus): string {
   switch (status) {
-    case "editing":
-      return "ring-2 ring-blue-500";
-    case "pending":
-      return "bg-yellow-50 animate-pulse";
-    case "success":
-      return "bg-green-50 animate-flash-success";
     case "error":
-      return "bg-red-50 ring-2 ring-red-500";
+      return "bg-red-50 ring-2 ring-red-500 ring-inset"; // Must include bg-red-50
+    case "success":
+      return "bg-green-50 ring-2 ring-green-500 ring-inset";
+    case "pending":
+      return "bg-yellow-50";
     default:
       return "";
   }

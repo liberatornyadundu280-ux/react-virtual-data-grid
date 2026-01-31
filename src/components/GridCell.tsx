@@ -164,17 +164,18 @@ export const GridCell: React.FC<GridCellProps> = ({
       data-col-index={position.colIndex}
       style={cellStyles}
       className={`
-        border-b border-r border-gray-200
-        ${isHeader ? "bg-gray-50 font-semibold" : "bg-white"}
-        ${isFocused && !isEditing ? "ring-2 ring-blue-500 ring-inset" : ""}
-        ${editStatusClass}
-        px-3 py-2
-        /* FIX: Remove overflow-hidden during editing so the error tooltip is visible */
-        ${isEditing ? "overflow-visible" : "overflow-hidden"}
-        cursor-pointer
-        hover:bg-gray-50
-        transition-colors
-      `}
+    border-b border-r border-gray-200
+    ${isHeader ? "bg-gray-50 font-semibold" : ""} 
+    /* FIX: Only apply bg-white if NOT editing and NOT a header */
+    ${!isHeader && !isEditing ? "bg-white" : ""} 
+    ${isFocused && !isEditing ? "ring-2 ring-blue-500 ring-inset" : ""}
+    ${editStatusClass} /* This contains bg-red-50 or bg-green-50 */
+    px-3 py-2
+    ${isEditing ? "overflow-visible" : "overflow-hidden"}
+    cursor-pointer
+    hover:bg-gray-50
+    transition-colors
+  `}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
