@@ -13,10 +13,7 @@ import {
   getCellAriaLabel,
 } from "../grid-engine/accessibility";
 import { getTransform, getCellZIndex } from "../grid-engine/layout";
-import {
-  isPositionBeingEdited,
-  getEditStatusClass,
-} from "../grid-engine/edit-engine";
+import { isPositionBeingEdited } from "../grid-engine/edit-engine";
 
 interface GridCellProps {
   /** Cell position in grid */
@@ -112,10 +109,6 @@ export const GridCell: React.FC<GridCellProps> = ({
   const zIndex = isEditing ? baseZIndex + 100 : baseZIndex;
 
   // Get edit status class
-  const editStatusClass =
-    editState && isEditing ? getEditStatusClass(editState.status) : "";
-
-  // Cell styles
   const cellStyles: React.CSSProperties = {
     position: "absolute",
     width: column.width,
