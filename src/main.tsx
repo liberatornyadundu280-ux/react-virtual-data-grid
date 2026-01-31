@@ -1,15 +1,15 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { DataGrid } from "./components/DataGrid";
-import type { GridSchema, GridData } from "./grid-engine/types";
+import type { GridSchema, GridData, GridRow } from "./grid-engine/types";
 import "./index.css";
 
 // Generate demo data
 function generateDemoData(count: number): GridData {
-  const data: GridData = [];
+  const temp: GridRow[] = [];
 
   for (let i = 0; i < count; i++) {
-    data.push({
+    temp.push({
       id: i + 1,
       name: `Person ${i + 1}`,
       email: `person${i + 1}@example.com`,
@@ -25,7 +25,7 @@ function generateDemoData(count: number): GridData {
       status: i % 3 === 0 ? "Active" : "Inactive",
     });
   }
-
+  const data: GridData = temp;
   return data;
 }
 

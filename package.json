@@ -10,7 +10,8 @@
     "build-storybook": "storybook build",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "chromatic": "npx chromatic --project-token=chpt_c0f01400893fef3"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -35,6 +36,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "axe-core": "^4.10.2",
+    "chromatic": "^13.3.5",
     "jest-axe": "^10.0.0",
     "jsdom": "^25.0.1",
     "postcss": "^8.4.49",

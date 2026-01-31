@@ -323,7 +323,6 @@ export function calculateScrollToColumn(
 
   const colLeft = offsets[colIndex] ?? 0;
   const colRight = offsets[colIndex + 1] ?? colLeft;
-  const colWidth = colRight - colLeft;
 
   const scrollableViewportWidth = viewportWidth - pinnedWidth;
   const viewportLeft = currentScrollLeft;
